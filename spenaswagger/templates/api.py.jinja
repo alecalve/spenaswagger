@@ -25,46 +25,46 @@ class {{model.name}}(Model):
     def __init__({{model.fields | as_args}}, **kwargs):
         {% for field in model.fields %}
         {% if field.required %}
-        if {{field.name}} is None:
-            raise TypeError("Argument `{{field.name}}` is required but its value is None")
+        if {{field.name | as_valid_name}} is None:
+            raise TypeError("Argument `{{field.name | as_valid_name}}` is required but its value is None")
         {% endif %}
         {# First try to convert to the given type #}
         {# convert dict to a Model object #}
         {% if field.type | is_model(api.models) %}
-        if isinstance({{field.name}}, dict):
-            {{field.name}} = {{field.type}}(**{{field.name}})
+        if isinstance({{field.name | as_valid_name}}, dict):
+            {{field.name | as_valid_name}} = {{field.type}}(**{{field.name | as_valid_name}})
         {% endif %}
         {# convert list to a list of Model object #}
         {% if field.type == "list" and field.items | is_model(api.models) %}
-        if isinstance({{field.name}}, list):
-            {{field.name}} = [e if isinstance(e, {{field.items}}) else {{field.items}}(**e) for e in {{field.name}}]
+        if isinstance({{field.name | as_valid_name}}, list):
+            {{field.name | as_valid_name}} = [e if isinstance(e, {{field.items}}) else {{field.items}}(**e) for e in {{field.name | as_valid_name}}]
         {% endif %}
         {# convert dict to a dict with keys being Model objects #}
         {% if field.type == "dict" and field.items[1] | is_model(api.models) %}
-        if isinstance({{field.name}}, dict):
-        {{field.name}} = {k, v if isinstance(v, {{field.items}}) else {{field.items}}(**v) for v in {{field.name}}}
+        if isinstance({{field.name | as_valid_name}}, dict):
+        {{field.name | as_valid_name}} = {k, v if isinstance(v, {{field.items}}) else {{field.items}}(**v) for v in {{field.name | as_valid_name}}}
         {% endif %}
         {# Bug: dates are declared as strings, but given as int in the json #}
         {% if field.type == "str" %}
-        if type({{field.name}}) is int:
-            {{field.name}} = str({{field.name}})
+        if type({{field.name | as_valid_name}}) is int:
+            {{field.name | as_valid_name}} = str({{field.name | as_valid_name}})
         {% endif %}
         {# Numbers are convertible #}
         {% if field.type in ("int", "float", "double") %}
-        if isinstance({{field.name}}, numbers.Number):
-            {{field.name}} = {{field.type}}({{field.name}})
+        if isinstance({{field.name | as_valid_name}}, numbers.Number):
+            {{field.name | as_valid_name}} = {{field.type}}({{field.name | as_valid_name}})
         {% endif %}
         {# Handle enums #}
         {% if field.enum %}
-        if isinstance({{field.name}}, str):
-            {{field.name}} = {{model.name}}.{{field.name | capitalize}}[{{field.name}}]
+        if isinstance({{field.name | as_valid_name}}, str):
+            {{field.name | as_valid_name}} = {{model.name}}.{{field.name | as_valid_name | capitalize}}[{{field.name | as_valid_name}}]
         {% endif %}
         {# Now check the type #}
         {# TODO: we should also check lists and dicts #}
-        {% set check_type = model.name + "." + (field.name | capitalize) if field.enum else field.type %}
-        if not (isinstance({{field.name}}, {{check_type}})) and {{field.name}} is not None:
-            raise TypeError("Argument `{{field.name}}` is not of type `{{check_type}}` (%s)" % str(type({{field.name}})))
-        self.{{field.name}} = {{field.name}}
+        {% set check_type = model.name + "." + (field.name | as_valid_name | capitalize) if field.enum else field.type %}
+        if not (isinstance({{field.name | as_valid_name}}, {{check_type}})) and {{field.name | as_valid_name}} is not None:
+            raise TypeError("Argument `{{field.name | as_valid_name}}` is not of type `{{check_type}}` (%s)" % str(type({{field.name | as_valid_name}})))
+        self.{{field.name | as_valid_name}} = {{field.name | as_valid_name}}
         {% endfor %}
         self._extra_ = kwargs
 {% endfor %}
@@ -82,9 +82,9 @@ class {{api.name}}(API):
         ({{endpoint.method}} {{endpoint.path}})
 
         {% for p in endpoint.parameters %}
-        :param {{p.name}}: {{p.description}}
+        :param {{p.name | as_valid_name }}: {{p.description}}
         {% set ptype = "list(" + p.items + ")" if p.type == "list" else p.type %}
-        :type {{p.name}}: {{ptype}}
+        :type {{p.name | as_valid_name}}: {{ptype}}
         {% endfor %}
         {% set rtype = "Nothing" if endpoint.return_.type == "void" else endpoint.return_.type %}
         {% set rtype = "list(" + endpoint.return_.items + ")" if rtype == "list" else rtype %}
@@ -93,21 +93,21 @@ class {{api.name}}(API):
 
         {% for parameter in endpoint.parameters %}
         {% if not parameter.type %}
-            if {{parameter.required}} and {{parameter.name}} is None:
-                raise TypeError("Argument `{{parameter.name}}` is required but its value is None")
-            if not (isinstance({{parameter.name}}, {{parameter.type}})):
+            if {{parameter.required}} and {{parameter.name | as_valid_name}} is None:
+                raise TypeError("Argument `{{parameter.name | as_valid_name}}` is required but its value is None")
+            if not (isinstance({{parameter.name | as_valid_name}}, {{parameter.type}})):
                 # Bug: dates are declared as strings, but given as int in the json
-                if ({{parameter.type}} is str and type({{parameter.name}}) is not int)
-                    raise TypeError("Argument `{{parameter.name}}` is not of type `{{parameter.type}}` (%s)" % 
-                                    str(type({{parameter.name}})))
-            self.{{parameter.name}} = {{parameter.name}}
+                if ({{parameter.type}} is str and type({{parameter.name | as_valid_name}}) is not int)
+                    raise TypeError("Argument `{{parameter.name | as_valid_name}}` is not of type `{{parameter.type}}` (%s)" %
+                                    str(type({{parameter.name | as_valid_name}})))
+            self.{{parameter.name | as_valid_name}} = {{parameter.name | as_valid_name}}
 
         {% endif %}
         {% endfor %}
         path = "{{endpoint.path}}"
         {% for parameter in endpoint.parameters %}
         {% if parameter.paramType == "path" %}
-        path = path.replace("{" + "{{parameter.name}}" + "}", str({{parameter.name}}))
+        path = path.replace("{" + "{{parameter.name}}" + "}", str({{parameter.name | as_valid_name}}))
         {% endif %}
         {% endfor %}
 

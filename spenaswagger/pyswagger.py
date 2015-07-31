@@ -4,12 +4,6 @@ import os
 import keyword
 
 
-def to_valid_name(name):
-    if name in keyword.kwlist:
-        name += "_"
-    return name
-
-
 def remove_generics(t):
     if type(t) is tuple:
         return tuple([remove_generics(e) for e in t])
@@ -69,22 +63,27 @@ def gen_py(api_categories):
 
     env = Environment(loader=PackageLoader("spenaswagger", "templates"), trim_blocks=True, lstrip_blocks=True)
 
+    def as_valid_name(name):
+        if name in keyword.kwlist:
+            print(name)
+            name += "_"
+            print(name)
+        return name
+
     def to_value(arg):
         if type(arg) != str and arg is not None:
             return arg
-
-        arg = to_valid_name(arg)
 
         if arg == "false":
             return "False"
         elif arg == "true":
             return "True"
-        return '"%s"' % arg
+        return '"%s"' % as_valid_name(arg)
 
     def as_args(args):
         args = list(sorted(args, key=lambda a: a.name))
-        req_args = [to_valid_name(a.name) for a in args if a.required]
-        def_args = [a.name + "=" + to_value(getattr(a, "default", None)) for a in args if not a.required]
+        req_args = [as_valid_name(a.name) for a in args if a.required]
+        def_args = [as_valid_name(a.name) + "=" + to_value(getattr(a, "default", None)) for a in args if not a.required]
         return ', '.join(["self"] + req_args + def_args)
 
     def query_args(parameters):
@@ -119,6 +118,7 @@ def gen_py(api_categories):
     env.filters['body'] = body
     env.filters['errors_dict'] = errors_dict
     env.filters['as_calling_args'] = as_calling_args
+    env.filters['as_valid_name'] = as_valid_name
     env.filters['path_to_function'] = path_to_function
     env.filters['is_model'] = is_model
     env.filters['needs_enum'] = needs_enum

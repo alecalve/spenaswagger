@@ -1,6 +1,5 @@
 import requests
 from .datamodel import Category, Endpoint, Parameter, Response, Return, Field, Model
-from .pyswagger import to_valid_name
 
 
 def find_comma(s):
@@ -34,8 +33,6 @@ def swagit(user, password, url):
         for name, model in cat_api.get("models", {}).items():
             fields = []
             for pname, field in model["properties"].items():
-                pname = to_valid_name(pname)
-
                 if field["type"] == "array":
                     item_type = field.get("items", {}).get("type", "")
                     if item_type.startswith("Entry"):
