@@ -65,9 +65,7 @@ def gen_py(api_categories):
 
     def as_valid_name(name):
         if name in keyword.kwlist:
-            print(name)
             name += "_"
-            print(name)
         return name
 
     def to_value(arg):
@@ -87,7 +85,7 @@ def gen_py(api_categories):
         return ', '.join(["self"] + req_args + def_args)
 
     def query_args(parameters):
-        args = ['"' + p.name + '": ' + p.name for p in parameters if p.paramType == "query"]
+        args = ['"' + p.name + '": ' + as_valid_name(p.name) for p in parameters if p.paramType == "query"]
         args = ', '.join(args)
         return "{" + args + "}"
 
