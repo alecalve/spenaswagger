@@ -103,7 +103,7 @@ def gen_py(api_categories):
         path = [p for p in path if len(p) > 0]
         path = [p for p in path if p[0] != "{"] + ["by_" + p[1:-1] for p in path if p[0] == "{"]
         path = [endpoint.method.lower()] + path
-        return "_".join(path)
+        return "_".join(path).replace("-", "_")
 
     def is_model(type, models):
         return type in [m.name for m in models]
