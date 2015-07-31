@@ -1,6 +1,13 @@
 from .datamodel import Transformer
 from jinja2 import PackageLoader, Environment
 import os
+import keyword
+
+
+def to_valid_name(name):
+    if name in keyword.kwlist:
+        name += "_"
+    return name
 
 
 def remove_generics(t):
@@ -66,6 +73,8 @@ def gen_py(api_categories):
         if type(arg) != str and arg is not None:
             return arg
 
+        arg = to_valid_name(arg)
+
         if arg == "false":
             return "False"
         elif arg == "true":
@@ -74,7 +83,7 @@ def gen_py(api_categories):
 
     def as_args(args):
         args = list(sorted(args, key=lambda a: a.name))
-        req_args = [a.name for a in args if a.required]
+        req_args = [to_valid_name(a.name) for a in args if a.required]
         def_args = [a.name + "=" + to_value(getattr(a, "default", None)) for a in args if not a.required]
         return ', '.join(["self"] + req_args + def_args)
 
